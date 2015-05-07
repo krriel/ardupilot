@@ -149,7 +149,9 @@ bool DataFlash_File::NeedErase(void)
 char *DataFlash_File::_log_file_name(uint16_t log_num)
 {
     char *buf = NULL;
-    asprintf(&buf, "%s/%u.BIN", _log_directory, (unsigned)log_num);
+    if (asprintf(&buf, "%s/%u.BIN", _log_directory, (unsigned)log_num) == 0) {
+        return NULL;
+    }
     return buf;
 }
 
@@ -160,7 +162,9 @@ char *DataFlash_File::_log_file_name(uint16_t log_num)
 char *DataFlash_File::_lastlog_file_name(void)
 {
     char *buf = NULL;
-    asprintf(&buf, "%s/LASTLOG.TXT", _log_directory);
+    if (asprintf(&buf, "%s/LASTLOG.TXT", _log_directory) == 0) {
+        return NULL;
+    }
     return buf;
 }
 
@@ -651,7 +655,7 @@ void DataFlash_File::_io_timer(void)
           write.
          */
         BUF_ADVANCEHEAD(_writebuf, nwritten);
-#if CONFIG_HAL_BOARD != HAL_BOARD_AVR_SITL && CONFIG_HAL_BOARD_SUBTYPE != HAL_BOARD_SUBTYPE_LINUX_NONE
+#if CONFIG_HAL_BOARD != HAL_BOARD_SITL && CONFIG_HAL_BOARD_SUBTYPE != HAL_BOARD_SUBTYPE_LINUX_NONE
         ::fsync(_write_fd);
 #endif
     }

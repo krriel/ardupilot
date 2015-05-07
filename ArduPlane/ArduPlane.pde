@@ -103,7 +103,7 @@ static AP_Vehicle::FixedWing aparm;
 #include "Parameters.h"
 
 #include <AP_HAL_AVR.h>
-#include <AP_HAL_AVR_SITL.h>
+#include <AP_HAL_SITL.h>
 #include <AP_HAL_PX4.h>
 #include <AP_HAL_FLYMAPLE.h>
 #include <AP_HAL_Linux.h>
@@ -152,6 +152,8 @@ static void update_events(void);
 void gcs_send_text_fmt(const prog_char_t *fmt, ...);
 static void print_flight_mode(AP_HAL::BetterStream *port, uint8_t mode);
 static bool arm_motors(AP_Arming::ArmingMethod method);
+static bool create_mixer_file(const char *filename);
+static bool setup_failsafe_mixing(void);
 
 ////////////////////////////////////////////////////////////////////////////////
 // DataFlash
@@ -220,7 +222,7 @@ static AP_PitchController pitchController(ahrs, aparm, DataFlash);
 static AP_YawController   yawController(ahrs, aparm);
 static AP_SteerController steerController(ahrs);
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_AVR_SITL
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
 SITL sitl;
 #endif
 
@@ -1045,6 +1047,8 @@ static void one_second_loop()
     if (should_log(MASK_LOG_MODE)) {
         Log_Write_Status();
     }
+
+    ins.set_raw_logging(should_log(MASK_LOG_IMU_RAW));
 }
 
 static void log_perf_info()

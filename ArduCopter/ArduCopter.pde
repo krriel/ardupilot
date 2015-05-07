@@ -91,7 +91,7 @@
 // AP_HAL
 #include <AP_HAL.h>
 #include <AP_HAL_AVR.h>
-#include <AP_HAL_AVR_SITL.h>
+#include <AP_HAL_SITL.h>
 #include <AP_HAL_PX4.h>
 #include <AP_HAL_VRBRAIN.h>
 #include <AP_HAL_FLYMAPLE.h>
@@ -275,7 +275,7 @@ AP_AHRS_NavEKF ahrs(ins, barometer, gps, sonar);
 AP_AHRS_DCM ahrs(ins, barometer, gps);
 #endif
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_AVR_SITL
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
 SITL sitl;
 #endif
 
@@ -1088,6 +1088,9 @@ static void one_hz_loop()
 
     // update position controller alt limits
     update_poscon_alt_max();
+
+    // enable/disable raw gyro/accel logging
+    ins.set_raw_logging(should_log(MASK_LOG_IMU_RAW));
 }
 
 // called at 50hz

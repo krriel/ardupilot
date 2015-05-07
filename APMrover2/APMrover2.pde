@@ -103,7 +103,7 @@
 #include <AP_Frsky_Telem.h>
 
 #include <AP_HAL_AVR.h>
-#include <AP_HAL_AVR_SITL.h>
+#include <AP_HAL_SITL.h>
 #include <AP_HAL_PX4.h>
 #include <AP_HAL_VRBRAIN.h>
 #include <AP_HAL_FLYMAPLE.h>
@@ -242,7 +242,7 @@ AP_Mission mission(ahrs, &start_command, &verify_command, &exit_mission);
 
 static OpticalFlow optflow;
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_AVR_SITL
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
 SITL sitl;
 #endif
 
@@ -737,6 +737,8 @@ static void one_second_loop(void)
         }
         counter = 0;
     }
+
+    ins.set_raw_logging(should_log(MASK_LOG_IMU_RAW));
 }
 
 static void update_GPS_50Hz(void)
@@ -828,7 +830,7 @@ static void update_current_mode(void)
 
         // and throttle gives speed in proportion to cruise speed, up
         // to 50% throttle, then uses nudging above that.
-        float target_speed = channel_throttle->pwm_to_angle() * 0.01 * 2 * g.speed_cruise;
+        float target_speed = channel_throttle->pwm_to_angle() * 0.01f * 2 * g.speed_cruise;
         set_reverse(target_speed < 0);
         if (in_reverse) {
             target_speed = constrain_float(target_speed, -g.speed_cruise, 0);

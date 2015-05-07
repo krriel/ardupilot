@@ -58,29 +58,15 @@ def deltree(path):
 
 
 
-def build_SIL(atype, target='sitl'):
+def build_SIL(atype, target='sitl', j=1):
     '''build desktop SIL'''
     run_cmd("make clean",
             dir=reltopdir(atype),
             checkfail=True)
-    run_cmd("make %s" % target,
+    run_cmd("make -j%u %s" % (j, target),
             dir=reltopdir(atype),
             checkfail=True)
     return True
-
-def build_AVR(atype, board='mega2560'):
-    '''build AVR binaries'''
-    config = open(reltopdir('config.mk'), mode='w')
-    config.write('''
-HAL_BOARD=HAL_BOARD_APM1
-BOARD=%s
-PORT=/dev/null
-''' % board)
-    config.close()
-    run_cmd("make clean", dir=reltopdir(atype),  checkfail=True)
-    run_cmd("make", dir=reltopdir(atype),  checkfail=True)
-    return True
-
 
 # list of pexpect children to close on exit
 close_list = []
@@ -119,7 +105,7 @@ def pexpect_drain(p):
     except pexpect.TIMEOUT:
         pass
 
-def start_SIL(atype, valgrind=False, wipe=False, height=None, synthetic_clock=True):
+def start_SIL(atype, valgrind=False, wipe=False, height=None, synthetic_clock=True, home=None, model=None, speedup=1):
     '''launch a SIL instance'''
     import pexpect
     cmd=""
@@ -135,6 +121,13 @@ def start_SIL(atype, valgrind=False, wipe=False, height=None, synthetic_clock=Tr
         cmd += ' -H %u' % height
     if synthetic_clock:
         cmd += ' -S'
+    if home is not None:
+        cmd += ' --home=%s' % home
+    if model is not None:
+        cmd += ' --model=%s' % model
+    if speedup != 1:
+        cmd += ' --speedup=%f' % speedup
+    print("Running: %s" % cmd)
     ret = pexpect.spawn(cmd, logfile=sys.stdout, timeout=5)
     ret.delaybeforesend = 0
     pexpect_autoclose(ret)

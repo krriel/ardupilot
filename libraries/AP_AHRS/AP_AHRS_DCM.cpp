@@ -271,6 +271,10 @@ AP_AHRS_DCM::yaw_error_compass(void)
     // get the mag vector in the earth frame
     Vector2f rb = _dcm_matrix.mulXY(mag);
 
+    if (rb.length() < FLT_EPSILON) {
+        return 0.0f;
+    }
+
     rb.normalize();
     if (rb.is_inf()) {
         // not a valid vector
@@ -278,7 +282,7 @@ AP_AHRS_DCM::yaw_error_compass(void)
     }
 
     // update vector holding earths magnetic field (if required)
-    if( _last_declination != _compass->get_declination() ) {
+    if( !is_equal(_last_declination,_compass->get_declination()) ) {
         _last_declination = _compass->get_declination();
         _mag_earth.x = cosf(_last_declination);
         _mag_earth.y = sinf(_last_declination);
@@ -740,7 +744,7 @@ AP_AHRS_DCM::drift_correction(float deltat)
     // flat, but still allow for yaw correction using the
     // accelerometers at high roll angles as long as we have a GPS
     if (AP_AHRS_DCM::use_compass()) {
-        if (have_gps() && gps_gain == 1.0f) {
+        if (have_gps() && is_equal(gps_gain,1.0f)) {
             error[besti].z *= sinf(fabsf(roll));
         } else {
             error[besti].z = 0;

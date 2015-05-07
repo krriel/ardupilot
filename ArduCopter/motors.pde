@@ -141,7 +141,7 @@ static bool init_arm_motors(bool arming_from_gcs)
         update_notify();
     }
 
-#if HIL_MODE != HIL_MODE_DISABLED || CONFIG_HAL_BOARD == HAL_BOARD_AVR_SITL
+#if HIL_MODE != HIL_MODE_DISABLED || CONFIG_HAL_BOARD == HAL_BOARD_SITL
     gcs_send_text_P(SEVERITY_HIGH, PSTR("ARMING MOTORS"));
 #endif
 
@@ -346,7 +346,7 @@ static bool pre_arm_checks(bool display_failure)
 
         // check for unreasonable mag field length
         float mag_field = compass.get_field().length();
-        if (mag_field > COMPASS_MAGFIELD_EXPECTED*1.65 || mag_field < COMPASS_MAGFIELD_EXPECTED*0.35) {
+        if (mag_field > COMPASS_MAGFIELD_EXPECTED*1.65f || mag_field < COMPASS_MAGFIELD_EXPECTED*0.35f) {
             if (display_failure) {
                 gcs_send_text_P(SEVERITY_HIGH,PSTR("PreArm: Check mag field"));
             }
@@ -746,7 +746,7 @@ static void init_disarm_motors()
         return;
     }
 
-#if HIL_MODE != HIL_MODE_DISABLED || CONFIG_HAL_BOARD == HAL_BOARD_AVR_SITL
+#if HIL_MODE != HIL_MODE_DISABLED || CONFIG_HAL_BOARD == HAL_BOARD_SITL
     gcs_send_text_P(SEVERITY_HIGH, PSTR("DISARMING MOTORS"));
 #endif
 

@@ -158,7 +158,7 @@ static void NOINLINE send_nav_controller_output(mavlink_channel_t chan)
 // report simulator state
 static void NOINLINE send_simstate(mavlink_channel_t chan)
 {
-#if CONFIG_HAL_BOARD == HAL_BOARD_AVR_SITL
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     sitl.simstate_send(chan);
 #endif
 }
@@ -375,7 +375,7 @@ bool GCS_MAVLINK::stream_trigger(enum streams stream_num)
 
     // send at a much lower rate during parameter sends
     if (_queued_parameter != NULL) {
-        rate *= 0.25;
+        rate *= 0.25f;
     }
 
     if (rate <= 0) {
@@ -585,7 +585,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
             
             case MAV_CMD_PREFLIGHT_CALIBRATION:
             {
-                if (packet.param1 == 1) {
+                if (is_equal(packet.param1,1.0f)) {
                     ins.init_gyro();
                     if (ins.gyro_calibrated_ok_all()) {
                         ahrs.reset_gyro_drift();
@@ -594,16 +594,16 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
                         result = MAV_RESULT_FAILED;
                     }
                 } 
-                if (packet.param3 == 1) {
+                if (is_equal(packet.param3,1.0f)) {
                     init_barometer();
                     // zero the altitude difference on next baro update
                     nav_status.need_altitude_calibration = true;
                 }
-                if (packet.param4 == 1) {
+                if (is_equal(packet.param4,1.0f)) {
                     // Cant trim radio
                 }
 #if !defined( __AVR_ATmega1280__ )
-                else if (packet.param5 == 1) {
+                else if (is_equal(packet.param5,1.0f)) {
                     float trim_roll, trim_pitch;
                     AP_InertialSensor_UserInteract_MAVLink interact(this);
                     if(ins.calibrate_accel(&interact, trim_roll, trim_pitch)) {
@@ -618,10 +618,10 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 
             case MAV_CMD_COMPONENT_ARM_DISARM:
                 if (packet.target_component == MAV_COMP_ID_SYSTEM_CONTROL) {
-                    if (packet.param1 == 1.0f) {
+                    if (is_equal(packet.param1,1.0f)) {
                         arm_servos();
                         result = MAV_RESULT_ACCEPTED;
-                    } else if (packet.param1 == 0.0f)  {
+                    } else if (is_zero(packet.param1))  {
                         disarm_servos();
                         result = MAV_RESULT_ACCEPTED;
                     } else {
@@ -665,16 +665,16 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 
             case MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN:
             {
-                if (packet.param1 == 1 || packet.param1 == 3) {
+                if (is_equal(packet.param1,1.0f) || is_equal(packet.param1,3.0f)) {
                     // when packet.param1 == 3 we reboot to hold in bootloader
-                    hal.scheduler->reboot(packet.param1 == 3);
+                    hal.scheduler->reboot(is_equal(packet.param1,3.0f));
                     result = MAV_RESULT_ACCEPTED;
                 }
                 break;
             }
 
             case MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES: {
-                if (packet.param1 == 1) {
+                if (is_equal(packet.param1,1.0f)) {
                     gcs[chan-MAVLINK_COMM_0].send_autopilot_version();
                     result = MAV_RESULT_ACCEPTED;
                 }

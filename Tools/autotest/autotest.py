@@ -19,14 +19,13 @@ def get_default_params(atype):
     # use rover simulator so SITL is not starved of input
     from pymavlink import mavutil
     HOME=mavutil.location(40.071374969556928,-105.22978898137808,1583.702759,246)
-    sim_cmd = util.reltopdir('Tools/autotest/pysim/sim_wrapper.py') + ' --frame=rover --rate=200 --speedup=100 --home=%f,%f,%u,%u' % (
-        HOME.lat, HOME.lng, HOME.alt, HOME.heading)
+    if atype in ['APMrover2', 'ArduPlane']:
+        frame = 'rover'
+    else:
+        frame = '+'
 
-    runsim = pexpect.spawn(sim_cmd, logfile=sys.stdout, timeout=10)
-    runsim.delaybeforesend = 0
-    runsim.expect('Starting at lat')
-
-    sil = util.start_SIL(atype, wipe=True)
+    home = "%f,%f,%u,%u" % (HOME.lat, HOME.lng, HOME.alt, HOME.heading)
+    sil = util.start_SIL(atype, wipe=True, model=frame, home=home, speedup=10)
     mavproxy = util.start_MAVProxy_SIL(atype)
     print("Dumping defaults")
     idx = mavproxy.expect(['Please Run Setup', 'Saved [0-9]+ parameters to (\S+)'])
@@ -34,7 +33,7 @@ def get_default_params(atype):
         # we need to restart it after eeprom erase
         util.pexpect_close(mavproxy)
         util.pexpect_close(sil)
-        sil = util.start_SIL(atype)
+        sil = util.start_SIL(atype, model=frame, home=home, speedup=10)
         mavproxy = util.start_MAVProxy_SIL(atype)
         idx = mavproxy.expect('Saved [0-9]+ parameters to (\S+)')
     parmfile = mavproxy.match.group(1)
@@ -42,7 +41,6 @@ def get_default_params(atype):
     shutil.copy(parmfile, dest)
     util.pexpect_close(mavproxy)
     util.pexpect_close(sil)
-    util.pexpect_close(runsim)
     print("Saved defaults for %s to %s" % (atype, dest))
     return True
 
@@ -140,6 +138,7 @@ parser.add_option("--viewerip", default=None, help='IP address to send MAVLink a
 parser.add_option("--map", action='store_true', default=False, help='show map')
 parser.add_option("--experimental", default=False, action='store_true', help='enable experimental tests')
 parser.add_option("--timeout", default=3000, type='int', help='maximum runtime in seconds')
+parser.add_option("-j", default=1, type='int', help='build CPUs')
 
 opts, args = parser.parse_args()
 
@@ -153,12 +152,10 @@ steps = [
     'build.Examples',
     'build.Parameters',
 
-    'build2560.ArduPlane',
     'build.ArduPlane',
     'defaults.ArduPlane',
     'fly.ArduPlane',
 
-    'build2560.APMrover2',
     'build.APMrover2',
     'defaults.APMrover2',
     'drive.APMrover2',
@@ -199,19 +196,13 @@ def run_step(step):
         return test_prerequisites()
 
     if step == 'build.ArduPlane':
-        return util.build_SIL('ArduPlane')
+        return util.build_SIL('ArduPlane', j=opts.j)
 
     if step == 'build.APMrover2':
-        return util.build_SIL('APMrover2')
+        return util.build_SIL('APMrover2', j=opts.j)
 
     if step == 'build.ArduCopter':
-        return util.build_SIL('ArduCopter')
-
-    if step == 'build2560.ArduPlane':
-        return util.build_AVR('ArduPlane', board='mega2560')
-
-    if step == 'build2560.APMrover2':
-        return util.build_AVR('APMrover2', board='mega2560')
+        return util.build_SIL('ArduCopter', j=opts.j)
 
     if step == 'defaults.ArduPlane':
         return get_default_params('ArduPlane')

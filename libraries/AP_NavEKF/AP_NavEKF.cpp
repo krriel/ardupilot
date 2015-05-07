@@ -5,14 +5,9 @@
 #if HAL_CPU_CLASS >= HAL_CPU_CLASS_150
 
 /*
-  turn down optimisation on SITL to make debugging easier. We are not
-  short of CPU in SITL.
+  optionally turn down optimisation for debugging
  */
-#if CONFIG_HAL_BOARD == HAL_BOARD_AVR_SITL
-#pragma GCC optimize("O0")
-#else
-#pragma GCC optimize("O3")
-#endif
+// #pragma GCC optimize("O0")
 
 #include "AP_NavEKF.h"
 #include <AP_AHRS.h>
@@ -4267,7 +4262,7 @@ void NavEKF::readMagData()
         // check if compass offsets have ben changed and adjust EKF bias states to maintain consistent innovations
         if (_ahrs->get_compass()->healthy(0)) {
             Vector3f nowMagOffsets = _ahrs->get_compass()->get_offsets(0);
-            bool changeDetected = ((nowMagOffsets.x != lastMagOffsets.x) || (nowMagOffsets.y != lastMagOffsets.y) || (nowMagOffsets.z != lastMagOffsets.z));
+            bool changeDetected = (!is_equal(nowMagOffsets.x,lastMagOffsets.x) || !is_equal(nowMagOffsets.y,lastMagOffsets.y) || !is_equal(nowMagOffsets.z,lastMagOffsets.z));
             // Ignore bias changes before final mag field and yaw initialisation, as there may have been a compass calibration
             if (changeDetected && secondMagYawInit) {
                 state.body_magfield.x += (nowMagOffsets.x - lastMagOffsets.x) * 0.001f;
